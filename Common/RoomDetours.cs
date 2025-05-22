@@ -28,9 +28,10 @@ internal class RoomDetours : ILoadable
     {
         bool value = orig(npcType);
 
+        RoomScanner roomScanner = new(WorldGen.houseTile);
         foreach (var t in RoomTypeDatabase.LoadedTypes)
         {
-            if (t.RoomNeeds(npcType) is bool valueMod)
+            if (t.RoomNeeds(npcType, roomScanner) is bool valueMod)
                 WorldGen.canSpawn = value = valueMod;
         }
 

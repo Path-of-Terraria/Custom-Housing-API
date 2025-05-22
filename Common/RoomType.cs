@@ -20,6 +20,7 @@ public abstract class RoomType : ModType
         Load();
     }
 
+    /// <summary> Calls <see cref="CheckRoom"/> and updates <see cref="RoomCheckFailed"/> accordingly. </summary>
     public bool? DoRoomCheck(Point16 origin)
     {
         bool? value = CheckRoom(origin.X, origin.Y);
@@ -28,7 +29,8 @@ public abstract class RoomType : ModType
         return value;
     }
 
-    /// <summary> Used to check room structure. Returns null by default, which uses the vanilla response. </summary>
+    /// <summary> Used to check room structure. Returns null by default, which uses the vanilla response.<br/>
+    /// This is more advanced than <see cref="RoomNeeds"/> and doesn't normally need to be used. Consult vanilla code (<see cref="WorldGen.StartRoomCheck"/>) before using this method. </summary>
     /// <param name="x"> The x coordinate to start scanning at. </param>
     /// <param name="y"> The y coordinate to start scanning at. </param>
     /// <returns> Whether this room is the correct shape, size, etc. for this <see cref="RoomType"/>. </returns>
@@ -37,8 +39,9 @@ public abstract class RoomType : ModType
     /// <summary> Used to check room furniture requirements. Returns null by default, or false if <see cref="RoomCheckFailed"/>. <br/>
     /// Null uses the vanilla response. </summary>
     /// <param name="npcType"> Corresponds to <see cref="WorldGen.prioritizedTownNPCType"/>. </param>
+    /// <param name="results"> A helper to easily get the contents of a room. Tile data normally corresponds to <see cref="WorldGen.houseTile"/>. </param>
     /// <returns> Whether this room has all required furniture for this <see cref="RoomType"/> and <paramref name="npcType"/>. </returns>
-    public virtual bool? RoomNeeds(int npcType) => RoomCheckFailed ? false : null;
+    public virtual bool? RoomNeeds(int npcType, RoomScanner results) => RoomCheckFailed ? false : null;
 
     /// <summary> Used to modify how much an NPC favours a room with <paramref name="score"/>. </summary>
     /// <param name="score"> The room score to modify. </param>
