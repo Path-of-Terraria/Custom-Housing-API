@@ -15,7 +15,10 @@ public abstract class ModRoomType : ModType
     /// <summary> The name of this room as displayed in-game. Defaults to "Mods.(Mod Name).Rooms.(ModType Name)". </summary>
     public virtual LocalizedText DisplayName => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}");
 
-    public static int TypeOf<T>() where T : ModRoomType => ModContent.GetInstance<T>().Type;
+    public static int TypeOf<T>() where T : ModRoomType
+	{
+		return ModContent.GetInstance<T>().Type;
+	}
     /// <summary> Used to track the order content was registered in for <see cref="Type"/>. </summary>
     private static int RegistryCount;
 
@@ -32,9 +35,9 @@ public abstract class ModRoomType : ModType
     }
 
     /// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="RoomCheckSucceeded"/> accordingly. </summary>
-    public bool DoRoomCheck(Point16 origin)
+    public bool DoRoomCheck(Point16 origin, RoomScanner results)
     {
-        bool? value = RoomCheck(origin.X, origin.Y);
+        bool? value = RoomCheck(origin.X, origin.Y, results);
         return Success = value ?? true;
     }
 
@@ -49,13 +52,19 @@ public abstract class ModRoomType : ModType
     /// <param name="x"> The x coordinate to start scanning at. </param>
     /// <param name="y"> The y coordinate to start scanning at. </param>
     /// <returns> Whether this room is the correct shape, size, etc. for this <see cref="ModRoomType"/>. </returns>
-    protected virtual bool? RoomCheck(int x, int y) => false;
+    protected virtual bool? RoomCheck(int x, int y, RoomScanner results)
+	{
+		return null;
+	}
 
     /// <summary> Used to check room furniture requirements. Defaults to false, which uses the vanilla response. </summary>
     /// <param name="results"> A helper to easily get the contents of a room. Tile data normally corresponds to <see cref="WorldGen.houseTile"/>. </param>
     /// <param name="npcType"> The NPC type trying to move in. Corresponds to <see cref="WorldGen.prioritizedTownNPCType"/>. </param>
     /// <returns> Whether this room has all required furniture for this type and <paramref name="npcType"/>. </returns>
-    protected virtual bool RoomNeeds(int npcType, RoomScanner results) => false;
+    protected virtual bool RoomNeeds(int npcType, RoomScanner results)
+	{
+		return false;
+	}
 
     /// <summary> Used to modify how much an NPC favours a room with <paramref name="score"/>. </summary>
     /// <param name="score"> The room score to modify. </param>
