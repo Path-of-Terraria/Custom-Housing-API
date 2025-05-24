@@ -1,1 +1,4 @@
-
+Rooms: {
+	VanillaRoom.DisplayName: Housing
+	SampleRoom.DisplayName: Bank
+}

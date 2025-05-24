@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace HousingAPI.Common;
+﻿namespace HousingAPI.Common.Helpers;
 
 public readonly struct RoomScanner(bool[] tileSet)
 {
@@ -8,18 +6,6 @@ public readonly struct RoomScanner(bool[] tileSet)
     public static int NumTiles => WorldGen.numRoomTiles;
 
     public readonly bool[] TileSet = tileSet;
-    internal readonly List<int> ActiveRoomTypes = [];
-
-    /// <summary> Whether this room counts as the given type. </summary>
-    public readonly bool CountsAsType(int type)
-	{
-		return ActiveRoomTypes.Contains(type);
-	}
-    /// <inheritdoc cref="CountsAsType(int)"/>
-    public readonly bool CountsAsType<T>() where T : ModRoomType
-	{
-		return ActiveRoomTypes.Contains(ModRoomType.TypeOf<T>());
-	}
 
     /// <summary> Whether this room contains a tile of <paramref name="type"/>. </summary>
     public readonly bool ContainsTile(int type)

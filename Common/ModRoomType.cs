@@ -1,4 +1,6 @@
-﻿using Terraria.DataStructures;
+﻿using HousingAPI.Common.Helpers;
+using System.Collections.Generic;
+using Terraria.DataStructures;
 using Terraria.Localization;
 
 namespace HousingAPI.Common;
@@ -12,40 +14,48 @@ namespace HousingAPI.Common;
 /// </list></summary>
 public abstract class ModRoomType : ModType
 {
-    /// <summary> The name of this room as displayed in-game. Defaults to "Mods.(Mod Name).Rooms.(ModType Name)". </summary>
-    public virtual LocalizedText DisplayName => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}");
+	/// <summary> The name of this room as displayed in-game. Defaults to "Mods.(Mod Name).Rooms.(ModType Name).DisplayName". </summary>
+	public virtual LocalizedText DisplayName => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}.DisplayName");
+	/// <summary> The description of this room. Defaults to "Mods.(Mod Name).Rooms.(ModType Name).Description". </summary>
+	public virtual LocalizedText Description => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}.Description");
 
-    public static int TypeOf<T>() where T : ModRoomType
+	public static readonly Dictionary<int, ModRoomType> RoomByType = [];
+	public static int TypeOf<T>() where T : ModRoomType
 	{
 		return ModContent.GetInstance<T>().Type;
 	}
-    /// <summary> Used to track the order content was registered in for <see cref="Type"/>. </summary>
-    private static int RegistryCount;
 
-    /// <summary> Tracks consecutive operations for this room and whether it is valid. </summary>
-    public bool Success { get; private set; }
-    public int Type { get; private set; }
+	/// <summary> Tracks consecutive operations for this room and whether it is valid. </summary>
+	public bool Success { get; protected set; }
+	public int Type { get; private set; }
 
-    protected sealed override void Register()
-    {
-        Type = RegistryCount;
-        RegistryCount++;
+	protected sealed override void Register()
+	{
+		Type = RoomByType.Count;
+		RoomByType.Add(Type, this);
 
-        ModTypeLookup<ModRoomType>.Register(this);
-    }
+		ModTypeLookup<ModRoomType>.Register(this);
+	}
+
+	public sealed override void SetupContent()
+	{
+		SetStaticDefaults();
+	}
 
     /// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="RoomCheckSucceeded"/> accordingly. </summary>
     public bool DoRoomCheck(Point16 origin, RoomScanner results)
     {
         bool? value = RoomCheck(origin.X, origin.Y, results);
-        return Success = value ?? true;
+		Success = value ?? true;
+
+		return value ?? false;
     }
 
     /// <summary> Calls <see cref="RoomNeeds"/> according to <see cref="RoomCheckSucceeded"/>. </summary>
     public bool CheckRoomNeeds(int npcType, RoomScanner results)
     {
-        return Success && (Success = RoomNeeds(npcType, results));
-    }
+		return Success && (Success = RoomNeeds(results) && (MiscDetours.CurrentTask is Task.Querying || AllowNPC(npcType)));
+	}
 
     /// <summary> Used to check room structure. Defaults to null, which uses the vanilla response. <br/>
     /// This is more advanced than <see cref="RoomNeeds"/> and doesn't normally need to be used. Consult vanilla code (<see cref="WorldGen.StartRoomCheck"/>) before using this method. </summary>
@@ -59,16 +69,22 @@ public abstract class ModRoomType : ModType
 
     /// <summary> Used to check room furniture requirements. Defaults to false, which uses the vanilla response. </summary>
     /// <param name="results"> A helper to easily get the contents of a room. Tile data normally corresponds to <see cref="WorldGen.houseTile"/>. </param>
-    /// <param name="npcType"> The NPC type trying to move in. Corresponds to <see cref="WorldGen.prioritizedTownNPCType"/>. </param>
     /// <returns> Whether this room has all required furniture for this type and <paramref name="npcType"/>. </returns>
-    protected virtual bool RoomNeeds(int npcType, RoomScanner results)
+    protected virtual bool RoomNeeds(RoomScanner results)
 	{
 		return false;
 	}
 
-    /// <summary> Used to modify how much an NPC favours a room with <paramref name="score"/>. </summary>
-    /// <param name="score"> The room score to modify. </param>
-    /// <param name="ignoreType"></param>
-    /// <param name="npcType"> The type of NPC scoring the room. </param>
-    public virtual void ScoreRoom(ref int score, int ignoreType, int npcType) { }
+	/// <summary> Whether <paramref name="npcType"/> is allowed in this room. Returns true by default. </summary>
+	/// <param name="npcType"> The NPC type trying to move in. Corresponds to <see cref="WorldGen.prioritizedTownNPCType"/>. </param>
+	protected virtual bool AllowNPC(int npcType)
+	{
+		return true;
+	}
+
+	/// <summary> Used to modify how much an NPC favours a room with <paramref name="score"/>. </summary>
+	/// <param name="score"> The room score to modify. </param>
+	/// <param name="ignoreType"></param>
+	/// <param name="npcType"> The type of NPC scoring the room. </param>
+	public virtual void ScoreRoom(ref int score, int ignoreType, int npcType) { }
 }
