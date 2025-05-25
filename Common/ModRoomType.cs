@@ -1,9 +1,23 @@
 ﻿using HousingAPI.Common.Helpers;
+using HousingAPI.Content;
 using System.Collections.Generic;
+using System.Linq;
 using Terraria.DataStructures;
 using Terraria.Localization;
 
 namespace HousingAPI.Common;
+
+public class RoomTypeDatabase : ModSystem
+{
+	public static readonly Dictionary<int, ModRoomType> RoomByType = [];
+	public static int TypeOf<T>() where T : ModRoomType
+	{
+		return ModContent.GetInstance<T>().Type;
+	}
+
+	/// <summary> All registered <see cref="ModRoomType"/>s except for <see cref="VanillaRoom"/>. </summary>
+	public static IEnumerable<ModRoomType> GetContent => ModContent.GetContent<ModRoomType>().Where(x => x is not VanillaRoom);
+}
 
 /// <summary> Allows you to define custom NPC room behaviour as a singleton. <br/>
 /// Multiple room types can apply at once, if conditions allow it. <para/>
@@ -14,16 +28,12 @@ namespace HousingAPI.Common;
 /// </list></summary>
 public abstract class ModRoomType : ModType
 {
+	/// <summary> Whether this room completely overrides the vanilla room type. </summary>
+	public virtual bool Priority => false;
 	/// <summary> The name of this room as displayed in-game. Defaults to "Mods.(Mod Name).Rooms.(ModType Name).DisplayName". </summary>
 	public virtual LocalizedText DisplayName => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}.DisplayName");
 	/// <summary> The description of this room. Defaults to "Mods.(Mod Name).Rooms.(ModType Name).Description". </summary>
 	public virtual LocalizedText Description => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}.Description");
-
-	public static readonly Dictionary<int, ModRoomType> RoomByType = [];
-	public static int TypeOf<T>() where T : ModRoomType
-	{
-		return ModContent.GetInstance<T>().Type;
-	}
 
 	/// <summary> Tracks consecutive operations for this room and whether it is valid. </summary>
 	public bool Success { get; protected set; }
@@ -31,8 +41,8 @@ public abstract class ModRoomType : ModType
 
 	protected sealed override void Register()
 	{
-		Type = RoomByType.Count;
-		RoomByType.Add(Type, this);
+		Type = RoomTypeDatabase.RoomByType.Count;
+		RoomTypeDatabase.RoomByType.Add(Type, this);
 
 		ModTypeLookup<ModRoomType>.Register(this);
 	}
@@ -43,18 +53,22 @@ public abstract class ModRoomType : ModType
 	}
 
     /// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="RoomCheckSucceeded"/> accordingly. </summary>
-    public bool DoRoomCheck(Point16 origin, RoomScanner results)
+    public bool DoStructureCheck(Point16 origin, RoomScanner results)
     {
-        bool? value = RoomCheck(origin.X, origin.Y, results);
-		Success = value ?? true;
-
-		return value ?? false;
-    }
+		return Success = RoomCheck(origin.X, origin.Y, results);
+	}
 
     /// <summary> Calls <see cref="RoomNeeds"/> according to <see cref="RoomCheckSucceeded"/>. </summary>
-    public bool CheckRoomNeeds(int npcType, RoomScanner results)
+    public bool DoBasicCheck(int npcType, RoomScanner results, out bool needsMet)
     {
-		return Success && (Success = RoomNeeds(results) && (MiscDetours.CurrentTask is Task.Querying || AllowNPC(npcType)));
+		needsMet = false;
+		if (!Success)
+		{
+			return false;
+		}
+
+		needsMet = RoomNeeds(results);
+		return Success && (Success = needsMet && (MiscDetours.CurrentTask is Task.Querying || AllowNPC(npcType)));
 	}
 
     /// <summary> Used to check room structure. Defaults to null, which uses the vanilla response. <br/>
@@ -62,9 +76,9 @@ public abstract class ModRoomType : ModType
     /// <param name="x"> The x coordinate to start scanning at. </param>
     /// <param name="y"> The y coordinate to start scanning at. </param>
     /// <returns> Whether this room is the correct shape, size, etc. for this <see cref="ModRoomType"/>. </returns>
-    protected virtual bool? RoomCheck(int x, int y, RoomScanner results)
+    protected virtual bool RoomCheck(int x, int y, RoomScanner results)
 	{
-		return null;
+		return WorldGen.canSpawn;
 	}
 
     /// <summary> Used to check room furniture requirements. Defaults to false, which uses the vanilla response. </summary>

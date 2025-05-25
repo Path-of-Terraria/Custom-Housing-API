@@ -20,7 +20,7 @@ internal class HousingQueryUI : UIState
 		_elements = [];
 		_elements.Width.Set(250, 0);
 		_elements.Height.Set(0, 0.5f);
-		_elements.Left.Set(-20, 0);
+		_elements.Left.Set(-18, 0);
 		_elements.Height = StyleDimension.Fill;
 		_elements.HAlign = 1;
 
@@ -33,11 +33,9 @@ internal class HousingQueryUI : UIState
 	{
 		_elements.Clear();
 
-		int counter = 0;
-		foreach (ModRoomType i in ModContent.GetContent<ModRoomType>())
+		foreach (int key in RoomTypeDatabase.RoomByType.Keys)
 		{
-			_elements.Add(new RoomElement(i, counter));
-			counter++;
+			_elements.Add(new RoomElement(RoomTypeDatabase.RoomByType[key], key));
 		}
 	}
 
@@ -57,7 +55,10 @@ internal class HousingQueryUI : UIState
 		base.Draw(spriteBatch);
 
 		var area = _elements.GetDimensions().ToRectangle();
-		spriteBatch.Draw(QueryBack.Value, area.TopLeft() + new Vector2(0, -56), Color.White * 0.85f);
+		Vector2 position = area.TopLeft() + new Vector2(0, -56);
+
+		spriteBatch.Draw(QueryBack.Value, position, Color.White * 0.85f);
+		Utils.DrawBorderString(spriteBatch, "Housing Query", position + new Vector2(QueryBack.Width() / 2.5f, QueryBack.Height() / 2), Main.MouseTextColorReal, anchorx: 0.5f, anchory: 0.4f);
 	}
 
 	private static void ActivateDisplay(On_Main.orig_DrawInterface_38_MouseCarriedObject orig, Main self)

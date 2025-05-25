@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
+using System.Collections.Generic;
 using Terraria.UI;
 
 namespace HousingAPI.Common.UI;
@@ -14,16 +15,16 @@ internal class RoomElement : UIElement
 	public readonly int Type;
 	public readonly string Text;
 
-	internal static bool[] Successes;
+	private static readonly Dictionary<int, bool> Successes = [];
 	private float _fadeIn = 0f;
 
-	public RoomElement(ModRoomType type, int indexInList)
+	public RoomElement(ModRoomType room, int indexInList)
 	{
-		Type = type.Type;
-		Text = type.DisplayName.Value;
+		Type = room.Type;
+		Text = room.DisplayName.Value;
 		_fadeIn -= indexInList;
 
-		Successes = null;
+		Successes.Clear();
 
 		Width.Pixels = 224;
 		Height.Pixels = 24;
@@ -49,10 +50,20 @@ internal class RoomElement : UIElement
 
 		Utils.DrawBorderString(spriteBatch, Text, center, Main.MouseTextColorReal * _fadeIn, 0.9f, 0.5f, 0.4f);
 
-		if (Successes is not null)
+		if (Successes.TryGetValue(Type, out bool success))
 		{
-			Rectangle frame = Score.Frame(1, 2, 0, Successes[Type] ? 0 : 1, sizeOffsetY: -2);
+			Rectangle frame = Score.Frame(1, 2, 0, success ? 0 : 1, sizeOffsetY: -2);
 			spriteBatch.Draw(Score.Value, center + new Vector2(-area.Width / 2 + 14, 0), frame, Color.White * 0.85f * _fadeIn, 0, frame.Size() / 2, 0.8f, default, 0);
+		}
+	}
+
+	public static void UpdateIndicators()
+	{
+		Successes.Clear();
+
+		foreach (int type in RoomTypeDatabase.RoomByType.Keys)
+		{
+			Successes.Add(type, RoomTypeDatabase.RoomByType[type].Success);
 		}
 	}
 }

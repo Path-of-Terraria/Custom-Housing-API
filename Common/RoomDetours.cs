@@ -1,16 +1,12 @@
 ﻿using HousingAPI.Common.Helpers;
 using HousingAPI.Common.UI;
 using HousingAPI.Content;
-using System.Collections.Generic;
-using System.Linq;
 using Terraria.DataStructures;
 
 namespace HousingAPI.Common;
 
 internal class RoomDetours : ILoadable
 {
-	internal static IEnumerable<ModRoomType> RoomTypes => ModContent.GetContent<ModRoomType>().Where(x => x is not VanillaRoom);
-
 	public void Load(Mod mod)
     {
         On_WorldGen.StartRoomCheck += DoCustomCheck;
@@ -23,50 +19,54 @@ internal class RoomDetours : ILoadable
         bool value = orig(x, y);
         RoomScanner roomScanner = new(WorldGen.houseTile);
 
-		VanillaRoom.Instance.DoRoomCheck(new Point16(x, y), roomScanner);
+		VanillaRoom.Instance.SetSuccess(value);
+		value = VanillaRoom.Instance.DoStructureCheck(new Point16(x, y), roomScanner);
 
-        foreach (ModRoomType t in RoomTypes)
+        foreach (ModRoomType t in RoomTypeDatabase.GetContent)
         {
-            if (t.DoRoomCheck(new Point16(x, y), roomScanner) == true)
-			{
-				WorldGen.canSpawn = value = true;
-			}
-        }
+			value |= t.DoStructureCheck(new Point16(x, y), roomScanner);
+		}
 
-        return value;
+        return WorldGen.canSpawn = value;
     }
 
     private static bool CustomRoomNeeds(On_WorldGen.orig_RoomNeeds orig, int npcType)
     {
-        bool value = orig(npcType);
+        bool vanillaValue = orig(npcType);
+		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic with Priority correctly
 		RoomScanner scanner = new(WorldGen.houseTile);
 
-		VanillaRoom.Instance.SetSuccess(value);
-		WorldGen.canSpawn = value = VanillaRoom.Instance.CheckRoomNeeds(npcType, scanner);
+		VanillaRoom.Instance.SetSuccess(vanillaValue);
+		vanillaValue = VanillaRoom.Instance.DoBasicCheck(npcType, scanner, out _);
 
-		foreach (ModRoomType t in RoomTypes)
+		foreach (ModRoomType t in RoomTypeDatabase.GetContent)
 		{
-			if (t.CheckRoomNeeds(npcType, scanner) == true)
+			modValue |= t.DoBasicCheck(npcType, scanner, out bool needsMet); //Modded rooms can't falsify, so specific NPC filters don't work for them. Fix this
+
+			if (needsMet && t.Priority)
 			{
-				WorldGen.canSpawn = value = true;
+				VanillaRoom.Instance.SetSuccess(vanillaValue = false);
 			}
 		}
 
-		if (MiscDetours.CurrentTask is Task.Querying)
+		if (MiscDetours.CurrentTask is Task.Querying) //Take a snapshot of current successes for UI indicators
 		{
-			RoomElement.Successes = [.. ModContent.GetContent<ModRoomType>().Select(x => x.Success)];
+			RoomElement.UpdateIndicators();
 		}
 
-		return value;
+		return WorldGen.canSpawn = vanillaValue || modValue;
     }
 
     private static void CustomRoomScore(On_WorldGen.orig_ScoreRoom orig, int ignoreNPC, int npcTypeAskingToScoreRoom)
     {
         orig(ignoreNPC, npcTypeAskingToScoreRoom);
 
-		VanillaRoom.Instance.ScoreRoom(ref WorldGen.hiScore, ignoreNPC, npcTypeAskingToScoreRoom);
+		if (VanillaRoom.Instance.Success)
+		{
+			VanillaRoom.Instance.ScoreRoom(ref WorldGen.hiScore, ignoreNPC, npcTypeAskingToScoreRoom);
+		}
 
-        foreach (ModRoomType t in RoomTypes)
+        foreach (ModRoomType t in RoomTypeDatabase.GetContent)
         {
             if (t.Success) //Check whether the room is still in play before allowing it to modify the score
 			{

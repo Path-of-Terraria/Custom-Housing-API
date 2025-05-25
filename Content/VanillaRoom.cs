@@ -4,17 +4,23 @@ using HousingAPI.Common.Helpers;
 namespace HousingAPI.Content;
 
 /// <summary> Represents the default NPC room. </summary>
-internal class VanillaRoom : ModRoomType
+public sealed class VanillaRoom : ModRoomType
 {
-	internal static VanillaRoom Instance { get; private set; }
-	public void SetSuccess(bool value)
+	public static VanillaRoom Instance { get; private set; }
+
+	internal void SetSuccess(bool value)
 	{
 		Success = value;
 	}
 
-	public override void SetStaticDefaults()
+	public override void Load()
 	{
-		Instance = ModContent.GetInstance<VanillaRoom>();
+		Instance = this;
+	}
+
+	protected override bool RoomCheck(int x, int y, RoomScanner results)
+	{
+		return Success;
 	}
 
 	protected override bool RoomNeeds(RoomScanner results)
