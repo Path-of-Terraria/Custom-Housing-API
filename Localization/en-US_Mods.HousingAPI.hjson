@@ -1,4 +1,17 @@
 Rooms: {
-	VanillaRoom.DisplayName: Housing
-	SampleRoom.DisplayName: Bank
+	VanillaRoom: {
+		DisplayName: Housing
+		Description: Requires a chair, table, door, and light source
+	}
+
+	SampleRoom: {
+		DisplayName: Piggy Bank Room
+		Description: Requires a piggy bank
+	}
+
+	Common: {
+		Override: This room is overridden.
+		Suitable: This room is suitable.
+		Missing: This room is missing a {0}.
+	}
 }

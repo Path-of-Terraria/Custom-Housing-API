@@ -1,8 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using HousingAPI.Common.Helpers;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
+using Terraria.Localization;
 using Terraria.UI;
 
 namespace HousingAPI.Common.UI;
@@ -51,15 +53,31 @@ internal class RoomElement : UIElement
 		var area = GetDimensions().ToRectangle();
 		Vector2 center = area.Center() - new Vector2(20 * (1f - _fadeIn), 0);
 
+		QueryInfo info;
 		spriteBatch.Draw(Back.Value, center - Back.Size() / 2, Color.White * 0.95f * _fadeIn);
 		Utils.DrawBorderString(spriteBatch, Text, center, Main.MouseTextColorReal * _fadeIn, 0.9f, 0.5f, 0.4f);
 
 		if (IsMouseHovering)
 		{
 			spriteBatch.Draw(Back_Highlight.Value, center - Back_Highlight.Size() / 2, Color.White * 0.95f * _fadeIn);
+
+			string tooltip = RoomTypeDatabase.RoomByType[Type].Description.Value;
+			if (InfoByType.TryGetValue(Type, out info))
+			{
+				if (info.Success)
+				{
+					tooltip = Language.GetTextValue($"Mods.{nameof(HousingAPI)}.Rooms.Common.Suitable");
+				}
+				else if (info.Error != null)
+				{
+					tooltip = info.Error;
+				}
+			}
+
+			HoverTooltip.QueueTooltip(tooltip);
 		}
 
-		if (InfoByType.TryGetValue(Type, out QueryInfo info))
+		if (InfoByType.TryGetValue(Type, out info))
 		{
 			const float iconScale = 0.8f;
 			Rectangle frame = Score.Frame(1, 2, 0, info.Success ? 0 : 1, sizeOffsetY: -2);

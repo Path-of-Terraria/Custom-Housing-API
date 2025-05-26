@@ -142,7 +142,7 @@ internal class HousingQuerySystem : ModSystem
 
 	public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
 	{
-		int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Mouse Text"));
+		int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Inventory"));
 		if (mouseTextIndex != -1)
 		{
 			layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(Mod.Name + ':' + nameof(HousingQueryUI), Action, InterfaceScaleType.UI));

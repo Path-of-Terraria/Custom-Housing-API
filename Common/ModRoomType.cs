@@ -58,19 +58,19 @@ public abstract class ModRoomType : ModType
     /// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="RoomCheckSucceeded"/> accordingly. </summary>
     public bool DoStructureCheck(Point16 origin, RoomScanner results)
     {
+		ErrorLog = null; //Reset the log
 		return Success = RoomCheck(origin.X, origin.Y, results);
 	}
 
     /// <summary> Calls <see cref="RoomNeeds"/> according to <see cref="RoomCheckSucceeded"/>. </summary>
     public bool DoBasicCheck(int npcType, RoomScanner results, out bool needsMet)
     {
-		needsMet = false;
+		needsMet = RoomNeeds(results);
 		if (!Success)
 		{
 			return false;
 		}
 
-		needsMet = RoomNeeds(results);
 		return Success && (Success = needsMet && (MiscDetours.CurrentTask is Task.Querying || AllowNPC(npcType)));
 	}
 

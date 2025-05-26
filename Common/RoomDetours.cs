@@ -2,6 +2,7 @@
 using HousingAPI.Common.UI;
 using HousingAPI.Content;
 using Terraria.DataStructures;
+using Terraria.Localization;
 
 namespace HousingAPI.Common;
 
@@ -45,7 +46,7 @@ internal class RoomDetours : ILoadable
 
 			if (needsMet && t.Priority)
 			{
-				VanillaRoom.Instance.SetSuccess(vanillaValue = false);
+				VanillaRoom.Instance.SetSuccess(vanillaValue = false, Language.GetTextValue($"Mods.{nameof(HousingAPI)}.Rooms.Common.Override"));
 			}
 		}
 
