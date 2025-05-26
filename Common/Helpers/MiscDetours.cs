@@ -1,4 +1,5 @@
 ﻿using HousingAPI.Common.UI;
+using MonoMod.Cil;
 
 namespace HousingAPI.Common.Helpers;
 
@@ -17,6 +18,7 @@ public class MiscDetours : ILoadable
 	{
 		On_Main.DrawInterface_38_MouseCarriedObject += On_Main_DrawInterface_38_MouseCarriedObject;
 		On_WorldGen.MoveTownNPC += CorrectMoveNPCType;
+		IL_WorldGen.MoveTownNPC += RemoveNeedsLog;
 	}
 
 	private static void On_Main_DrawInterface_38_MouseCarriedObject(On_Main.orig_DrawInterface_38_MouseCarriedObject orig, Main self)
@@ -48,6 +50,24 @@ public class MiscDetours : ILoadable
 		else
 		{
 			return orig(x, y, n);
+		}
+	}
+
+	private static void RemoveNeedsLog(ILContext il)
+	{
+		try
+		{
+			ILCursor c = new(il);
+
+			c.GotoNext(MoveType.After, x => x.MatchCall("Terraria.WorldGen", "RoomNeeds"));
+			c.Index++;
+
+			c.EmitLdcI4(0);
+			c.EmitRet();
+		}
+		catch
+		{
+			MonoModHooks.DumpIL(ModContent.GetInstance<HousingAPI>(), il);
 		}
 	}
 

@@ -23,6 +23,7 @@ internal class HousingQueryUI : UIState
 		_elements.Left.Set(-18, 0);
 		_elements.Height = StyleDimension.Fill;
 		_elements.HAlign = 1;
+		_elements.OverflowHidden = false;
 
 		Append(_elements);
 
@@ -55,10 +56,10 @@ internal class HousingQueryUI : UIState
 		base.Draw(spriteBatch);
 
 		var area = _elements.GetDimensions().ToRectangle();
-		Vector2 position = area.TopLeft() + new Vector2(0, -56);
+		Vector2 position = area.TopLeft() + new Vector2(0, -58);
 
 		spriteBatch.Draw(QueryBack.Value, position, Color.White * 0.85f);
-		Utils.DrawBorderString(spriteBatch, "Housing Query", position + new Vector2(QueryBack.Width() / 2.5f, QueryBack.Height() / 2), Main.MouseTextColorReal, anchorx: 0.5f, anchory: 0.4f);
+		Utils.DrawBorderString(spriteBatch, Lang.inter[8].Value, position + new Vector2(QueryBack.Width() / 2.5f, QueryBack.Height() / 2), Main.MouseTextColorReal, anchorx: 0.5f, anchory: 0.4f);
 	}
 
 	private static void ActivateDisplay(On_Main.orig_DrawInterface_38_MouseCarriedObject orig, Main self)

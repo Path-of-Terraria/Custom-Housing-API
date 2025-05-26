@@ -7,15 +7,23 @@ using Terraria.UI;
 
 namespace HousingAPI.Common.UI;
 
+/// <summary> Used to contain info about a query in UI. </summary>
+public struct QueryInfo(bool Success, string Error = null)
+{
+	public bool Success = Success;
+	public string Error = Error;
+}
+
 internal class RoomElement : UIElement
 {
 	public static readonly Asset<Texture2D> Back = ModContent.Request<Texture2D>("HousingAPI/Assets/RoomElement");
+	public static readonly Asset<Texture2D> Back_Highlight = ModContent.Request<Texture2D>("HousingAPI/Assets/RoomElement_Highlight");
 	public static readonly Asset<Texture2D> Score = ModContent.Request<Texture2D>("HousingAPI/Assets/Score");
 
 	public readonly int Type;
 	public readonly string Text;
 
-	private static readonly Dictionary<int, bool> Successes = [];
+	private static readonly Dictionary<int, QueryInfo> InfoByType = [];
 	private float _fadeIn = 0f;
 
 	public RoomElement(ModRoomType room, int indexInList)
@@ -24,7 +32,7 @@ internal class RoomElement : UIElement
 		Text = room.DisplayName.Value;
 		_fadeIn -= indexInList;
 
-		Successes.Clear();
+		InfoByType.Clear();
 
 		Width.Pixels = 224;
 		Height.Pixels = 24;
@@ -43,27 +51,32 @@ internal class RoomElement : UIElement
 		var area = GetDimensions().ToRectangle();
 		Vector2 center = area.Center() - new Vector2(20 * (1f - _fadeIn), 0);
 
-		spriteBatch.Draw(Back.Value, center - Back.Size() / 2, Color.White * 0.85f * _fadeIn);
-
-		//Texture2D icon = TextureAssets.Item[ItemID.WoodenTable].Value;
-		//spriteBatch.Draw(icon, center + new Vector2(area.Width / 2 - 17, -1) - icon.Size() / 2, Color.White * _fadeIn);
-
+		spriteBatch.Draw(Back.Value, center - Back.Size() / 2, Color.White * 0.95f * _fadeIn);
 		Utils.DrawBorderString(spriteBatch, Text, center, Main.MouseTextColorReal * _fadeIn, 0.9f, 0.5f, 0.4f);
 
-		if (Successes.TryGetValue(Type, out bool success))
+		if (IsMouseHovering)
 		{
-			Rectangle frame = Score.Frame(1, 2, 0, success ? 0 : 1, sizeOffsetY: -2);
-			spriteBatch.Draw(Score.Value, center + new Vector2(-area.Width / 2 + 14, 0), frame, Color.White * 0.85f * _fadeIn, 0, frame.Size() / 2, 0.8f, default, 0);
+			spriteBatch.Draw(Back_Highlight.Value, center - Back_Highlight.Size() / 2, Color.White * 0.95f * _fadeIn);
+		}
+
+		if (InfoByType.TryGetValue(Type, out QueryInfo info))
+		{
+			const float iconScale = 0.8f;
+			Rectangle frame = Score.Frame(1, 2, 0, info.Success ? 0 : 1, sizeOffsetY: -2);
+
+			spriteBatch.Draw(Score.Value, center + new Vector2(-area.Width / 2 + 14, 2), frame, Color.Black * 0.3f * _fadeIn, 0, frame.Size() / 2, iconScale, default, 0);
+			spriteBatch.Draw(Score.Value, center + new Vector2(-area.Width / 2 + 14, 0), frame, Color.White * 0.85f * _fadeIn, 0, frame.Size() / 2, iconScale, default, 0);
 		}
 	}
 
 	public static void UpdateIndicators()
 	{
-		Successes.Clear();
+		InfoByType.Clear();
 
 		foreach (int type in RoomTypeDatabase.RoomByType.Keys)
 		{
-			Successes.Add(type, RoomTypeDatabase.RoomByType[type].Success);
+			ModRoomType room = RoomTypeDatabase.RoomByType[type];
+			InfoByType.Add(type, new(room.Success, room.ErrorLog));
 		}
 	}
 }

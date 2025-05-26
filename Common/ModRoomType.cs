@@ -1,4 +1,5 @@
 ﻿using HousingAPI.Common.Helpers;
+using HousingAPI.Common.UI;
 using HousingAPI.Content;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,7 @@ public class RoomTypeDatabase : ModSystem
 /// Multiple room types can apply at once, if conditions allow it. <para/>
 /// The provided methods are often called in the order they appear. For example: <list type="bullet">
 /// <item> RoomCheck </item>
+/// <item> AllowNPC </item>
 /// <item> RoomNeeds </item>
 /// <item> RoomScore </item>
 /// </list></summary>
@@ -35,6 +37,7 @@ public abstract class ModRoomType : ModType
 	/// <summary> The description of this room. Defaults to "Mods.(Mod Name).Rooms.(ModType Name).Description". </summary>
 	public virtual LocalizedText Description => Language.GetText($"Mods.{Mod.Name}.Rooms.{Name}.Description");
 
+	public string ErrorLog { get; protected set; }
 	/// <summary> Tracks consecutive operations for this room and whether it is valid. </summary>
 	public bool Success { get; protected set; }
 	public int Type { get; private set; }

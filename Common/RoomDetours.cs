@@ -33,7 +33,7 @@ internal class RoomDetours : ILoadable
     private static bool CustomRoomNeeds(On_WorldGen.orig_RoomNeeds orig, int npcType)
     {
         bool vanillaValue = orig(npcType);
-		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic with Priority correctly
+		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic using Priority correctly
 		RoomScanner scanner = new(WorldGen.houseTile);
 
 		VanillaRoom.Instance.SetSuccess(vanillaValue);
@@ -41,7 +41,7 @@ internal class RoomDetours : ILoadable
 
 		foreach (ModRoomType t in RoomTypeDatabase.GetContent)
 		{
-			modValue |= t.DoBasicCheck(npcType, scanner, out bool needsMet); //Modded rooms can't falsify, so specific NPC filters don't work for them. Fix this
+			modValue |= t.DoBasicCheck(npcType, scanner, out bool needsMet);
 
 			if (needsMet && t.Priority)
 			{
