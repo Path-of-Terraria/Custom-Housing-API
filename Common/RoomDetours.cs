@@ -1,18 +1,18 @@
-﻿using Terraria.DataStructures;
+﻿using HousingAPI.Common.Helpers;
+using HousingAPI.Common.UI;
+using HousingAPI.Content;
+using Terraria.DataStructures;
+using Terraria.Localization;
 
 namespace HousingAPI.Common;
 
 internal class RoomDetours : ILoadable
 {
-    internal static Mod Mod { get; private set; }
-
-    public void Load(Mod mod)
+	public void Load(Mod mod)
     {
         On_WorldGen.StartRoomCheck += DoCustomCheck;
         On_WorldGen.RoomNeeds += CustomRoomNeeds;
         On_WorldGen.ScoreRoom += CustomRoomScore;
-
-        Mod = mod;
     }
 
     private static bool DoCustomCheck(On_WorldGen.orig_StartRoomCheck orig, int x, int y)
@@ -20,55 +20,54 @@ internal class RoomDetours : ILoadable
         bool value = orig(x, y);
         RoomScanner roomScanner = new(WorldGen.houseTile);
 
-        foreach (ModRoomType t in ModContent.GetContent<ModRoomType>())
-        {
-            if (t.DoRoomCheck(new Point16(x, y), roomScanner) == true)
-			{
-				WorldGen.canSpawn = value = true;
-			}
-        }
+		VanillaRoom.Instance.SetSuccess(value);
+		value = VanillaRoom.Instance.DoStructureCheck(new Point16(x, y), roomScanner);
 
-        return value;
+        foreach (ModRoomType t in RoomTypeDatabase.GetContent)
+        {
+			value |= t.DoStructureCheck(new Point16(x, y), roomScanner);
+		}
+
+        return WorldGen.canSpawn = value;
     }
 
     private static bool CustomRoomNeeds(On_WorldGen.orig_RoomNeeds orig, int npcType)
     {
-        bool value = orig(npcType);
-        RoomScanner roomScanner = new(WorldGen.houseTile);
+        bool vanillaValue = orig(npcType);
+		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic using Priority correctly
+		RoomScanner scanner = new(WorldGen.houseTile);
 
-        foreach (GlobalRoomType t in Mod.GetContent<GlobalRoomType>())
-        {
-            bool? allowRoom = t.AllowRoom(npcType, roomScanner);
-            if (allowRoom == null)
+		VanillaRoom.Instance.SetSuccess(vanillaValue);
+		vanillaValue = VanillaRoom.Instance.DoBasicCheck(npcType, scanner, out _);
+
+		foreach (ModRoomType t in RoomTypeDatabase.GetContent)
+		{
+			modValue |= t.DoBasicCheck(npcType, scanner, out bool needsMet);
+
+			if (needsMet && t.Priority)
 			{
-				continue;
+				VanillaRoom.Instance.SetSuccess(vanillaValue = false, Language.GetTextValue($"Mods.{nameof(HousingAPI)}.Rooms.Common.Override"));
 			}
+		}
 
-            WorldGen.canSpawn = value &= allowRoom.Value;
-        }
+		if (MiscDetours.CurrentTask is Task.Querying) //Take a snapshot of current successes for UI indicators
+		{
+			RoomElement.UpdateIndicators();
+		}
 
-        foreach (ModRoomType t in Mod.GetContent<ModRoomType>())
-        {
-            if (t.CheckRoomNeeds(npcType, roomScanner) == true)
-            {
-                roomScanner.ActiveRoomTypes.Add(t.Type);
-                WorldGen.canSpawn = value = true;
-            }
-        }
-
-        return value;
+		return WorldGen.canSpawn = vanillaValue || modValue;
     }
 
     private static void CustomRoomScore(On_WorldGen.orig_ScoreRoom orig, int ignoreNPC, int npcTypeAskingToScoreRoom)
     {
         orig(ignoreNPC, npcTypeAskingToScoreRoom);
 
-        foreach (GlobalRoomType t in Mod.GetContent<GlobalRoomType>())
+		if (VanillaRoom.Instance.Success)
 		{
-			t.ScoreRoom(ref WorldGen.hiScore, ignoreNPC, npcTypeAskingToScoreRoom);
+			VanillaRoom.Instance.ScoreRoom(ref WorldGen.hiScore, ignoreNPC, npcTypeAskingToScoreRoom);
 		}
 
-        foreach (ModRoomType t in Mod.GetContent<ModRoomType>())
+        foreach (ModRoomType t in RoomTypeDatabase.GetContent)
         {
             if (t.Success) //Check whether the room is still in play before allowing it to modify the score
 			{
