@@ -4,13 +4,14 @@ using HousingAPI.Content;
 using System.Collections.Generic;
 using Terraria.DataStructures;
 using Terraria.Localization;
+using Terraria.ObjectData;
 
 namespace HousingAPI.Common;
 
 internal class RoomDetours : ILoadable
 {
-	private static readonly Dictionary<ushort, int> TileCounts = [];
-	private static readonly HashSet<Point16> Scanned = [];
+	internal static readonly Dictionary<ushort, int> TileCounts = [];
+	internal static readonly HashSet<Point16> Scanned = [];
 
 	public void Load(Mod mod)
     {
@@ -26,8 +27,8 @@ internal class RoomDetours : ILoadable
 
 		if (WorldGen.canSpawn && !Scanned.Contains(new Point16(x, y)))
 		{
-			ushort tileType = Main.tile[x, y].TileType;
-			if (!TileCounts.TryAdd(tileType, 1))
+			ushort tileType = Main.tile[x, y].TileType; //Some platforms cause issues with IsTopLeft
+			if ((tileType == TileID.Platforms || TileObjectData.IsTopLeft(x, y)) && !TileCounts.TryAdd(tileType, 1))
 			{
 				TileCounts[tileType]++;
 			}
@@ -42,7 +43,7 @@ internal class RoomDetours : ILoadable
 		TileCounts.Clear(); //TileCounts and Scanned are populated in the following orig
 
         bool value = orig(x, y);
-        RoomScanner roomScanner = new(TileCounts);
+        RoomScanner roomScanner = new();
 
 		VanillaRoom.Instance.SetSuccess(value);
 		value = VanillaRoom.Instance.DoStructureCheck(new Point16(x, y), roomScanner);
@@ -59,7 +60,7 @@ internal class RoomDetours : ILoadable
     {
         bool vanillaValue = orig(npcType);
 		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic using Priority correctly
-		RoomScanner scanner = new(TileCounts);
+		RoomScanner scanner = new();
 
 		VanillaRoom.Instance.SetSuccess(vanillaValue);
 		vanillaValue = VanillaRoom.Instance.DoBasicCheck(npcType, scanner, out _);
