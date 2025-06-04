@@ -1,6 +1,7 @@
 ﻿using HousingAPI.Common.Helpers;
 using HousingAPI.Common.UI;
 using HousingAPI.Content;
+using System.Collections.Generic;
 using Terraria.DataStructures;
 using Terraria.Localization;
 
@@ -8,17 +9,40 @@ namespace HousingAPI.Common;
 
 internal class RoomDetours : ILoadable
 {
+	private static readonly Dictionary<ushort, int> TileCounts = [];
+	private static readonly HashSet<Point16> Scanned = [];
+
 	public void Load(Mod mod)
     {
+		On_WorldGen.CheckRoom += HandleTileCounts;
         On_WorldGen.StartRoomCheck += DoCustomCheck;
         On_WorldGen.RoomNeeds += CustomRoomNeeds;
         On_WorldGen.ScoreRoom += CustomRoomScore;
     }
 
-    private static bool DoCustomCheck(On_WorldGen.orig_StartRoomCheck orig, int x, int y)
+	private static void HandleTileCounts(On_WorldGen.orig_CheckRoom orig, int x, int y)
+	{
+		orig(x, y);
+
+		if (WorldGen.canSpawn && !Scanned.Contains(new Point16(x, y)))
+		{
+			ushort tileType = Main.tile[x, y].TileType;
+			if (!TileCounts.TryAdd(tileType, 1))
+			{
+				TileCounts[tileType]++;
+			}
+
+			Scanned.Add(new Point16(x, y));
+		}
+	}
+
+	private static bool DoCustomCheck(On_WorldGen.orig_StartRoomCheck orig, int x, int y)
     {
+		Scanned.Clear();
+		TileCounts.Clear(); //TileCounts and Scanned are populated in the following orig
+
         bool value = orig(x, y);
-        RoomScanner roomScanner = new(WorldGen.houseTile);
+        RoomScanner roomScanner = new(TileCounts);
 
 		VanillaRoom.Instance.SetSuccess(value);
 		value = VanillaRoom.Instance.DoStructureCheck(new Point16(x, y), roomScanner);
@@ -35,7 +59,7 @@ internal class RoomDetours : ILoadable
     {
         bool vanillaValue = orig(npcType);
 		bool modValue = false; //Add a value for non-vanilla types so we can adjust logic using Priority correctly
-		RoomScanner scanner = new(WorldGen.houseTile);
+		RoomScanner scanner = new(TileCounts);
 
 		VanillaRoom.Instance.SetSuccess(vanillaValue);
 		vanillaValue = VanillaRoom.Instance.DoBasicCheck(npcType, scanner, out _);

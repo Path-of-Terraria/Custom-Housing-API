@@ -1,4 +1,4 @@
-﻿using HousingAPI.Common;
+﻿/*using HousingAPI.Common;
 using HousingAPI.Common.Helpers;
 using Humanizer;
 using Terraria.Localization;
@@ -13,7 +13,7 @@ internal class SampleRoom : ModRoomType
     //Because the merchant was removed from default housing in SampleGlobalRoom, this is the only valid room type for him.
     protected override bool RoomNeeds(RoomScanner results)
 	{
-		if (!results.ContainsTile(TileID.PiggyBank))
+		if (results.TileCount(TileID.PiggyBank) < 4)
 		{
 			ErrorLog = Language.GetTextValue($"Mods.{nameof(HousingAPI)}.Rooms.Common.Missing").FormatWith(Language.GetTextValue("ItemName.PiggyBank"));
 			return false;
@@ -26,4 +26,4 @@ internal class SampleRoom : ModRoomType
 	{
 		return npcType == NPCID.Merchant;
 	}
-}
+}*/

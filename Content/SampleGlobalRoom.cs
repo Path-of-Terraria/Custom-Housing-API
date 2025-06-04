@@ -1,4 +1,4 @@
-﻿using HousingAPI.Common;
+﻿/*using HousingAPI.Common;
 using HousingAPI.Common.Helpers;
 
 namespace HousingAPI.Content;
@@ -15,4 +15,4 @@ internal class SampleGlobalRoom : GlobalRoomType
 	{
 		return npcType == NPCID.Merchant ? false : null;
 	}
-}
+}*/

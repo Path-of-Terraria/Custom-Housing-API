@@ -1,11 +1,15 @@
-﻿namespace HousingAPI.Common.Helpers;
+﻿using System.Collections.Generic;
 
-public readonly struct RoomScanner(bool[] tileSet)
+namespace HousingAPI.Common.Helpers;
+
+/// <summary> Contains helpers for checking room requirements. </summary>
+public readonly struct RoomScanner(Dictionary<ushort, int> tileCounts)
 {
     /// <summary> How many tiles this room occupies. Shorthand for <see cref="WorldGen.numRoomTiles"/>. </summary>
     public static int NumTiles => WorldGen.numRoomTiles;
 
-    public readonly bool[] TileSet = tileSet;
+	private readonly bool[] TileSet = WorldGen.houseTile;
+	private readonly Dictionary<ushort, int> TileCounts = tileCounts;
 
     /// <summary> Whether this room contains a tile of <paramref name="type"/>. </summary>
     public readonly bool ContainsTile(int type)
@@ -13,8 +17,19 @@ public readonly struct RoomScanner(bool[] tileSet)
 		return TileSet[type];
 	}
 
-    /// <summary> Whether this room contains a tile from <see cref="TileID.Sets.RoomNeeds"/>. </summary>
-    public readonly bool HasRoomNeed(int[] types)
+	/// <summary> Counts all tiles in the room of <paramref name="type"/>. If <paramref name="type"/> is a multitile, all segments are counted. </summary>
+	public readonly int TileCount(int type)
+	{
+		if (TileCounts.TryGetValue((ushort)type, out int value))
+		{
+			return value;
+		}
+
+		return 0;
+	}
+
+	/// <summary> Whether this room contains a tile from <see cref="TileID.Sets.RoomNeeds"/>. </summary>
+	public readonly bool HasRoomNeed(int[] types)
     {
         for (int j = 0; j < types.Length; j++)
         {

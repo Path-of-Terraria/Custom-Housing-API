@@ -1,5 +1,4 @@
 ﻿using HousingAPI.Common.Helpers;
-using HousingAPI.Common.UI;
 using HousingAPI.Content;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,7 @@ namespace HousingAPI.Common;
 
 public class RoomTypeDatabase : ModSystem
 {
+	/// <summary> Stores registered rooms by <see cref="ModRoomType.Type"/>. </summary>
 	public static readonly Dictionary<int, ModRoomType> RoomByType = [];
 	public static int TypeOf<T>() where T : ModRoomType
 	{
@@ -55,15 +55,15 @@ public abstract class ModRoomType : ModType
 		SetStaticDefaults();
 	}
 
-    /// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="RoomCheckSucceeded"/> accordingly. </summary>
-    public bool DoStructureCheck(Point16 origin, RoomScanner results)
+	/// <summary> Calls <see cref="RoomCheck"/> and updates <see cref="Success"/> accordingly. </summary>
+	public bool DoStructureCheck(Point16 origin, RoomScanner results)
     {
 		ErrorLog = null; //Reset the log
 		return Success = RoomCheck(origin.X, origin.Y, results);
 	}
 
-    /// <summary> Calls <see cref="RoomNeeds"/> according to <see cref="RoomCheckSucceeded"/>. </summary>
-    public bool DoBasicCheck(int npcType, RoomScanner results, out bool needsMet)
+	/// <summary> Calls <see cref="RoomNeeds"/> according to <see cref="Success"/>. </summary>
+	public bool DoBasicCheck(int npcType, RoomScanner results, out bool needsMet)
     {
 		needsMet = RoomNeeds(results);
 		if (!Success)
@@ -86,7 +86,7 @@ public abstract class ModRoomType : ModType
 
     /// <summary> Used to check room furniture requirements. Defaults to false, which uses the vanilla response. </summary>
     /// <param name="results"> A helper to easily get the contents of a room. Tile data normally corresponds to <see cref="WorldGen.houseTile"/>. </param>
-    /// <returns> Whether this room has all required furniture for this type and <paramref name="npcType"/>. </returns>
+    /// <returns> Whether this room has all required furniture for this type. </returns>
     protected virtual bool RoomNeeds(RoomScanner results)
 	{
 		return false;
