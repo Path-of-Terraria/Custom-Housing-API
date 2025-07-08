@@ -1,1 +1,5 @@
-Modify this file with a description of your mod.
+API for customizing housing features in Terraria.
+Add rooms, add buildings, add requirements, and more.
+Your one stop shop for all housing features for your mod.
+
+Built by the Path of Terraria Team
