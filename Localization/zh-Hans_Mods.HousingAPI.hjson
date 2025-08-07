@@ -1,0 +1,17 @@
+Rooms: {
+	VanillaRoom: {
+		DisplayName: 房屋
+		Description: 需要一把椅子、桌子、门，以及光源
+	}
+
+	SampleRoom: {
+		DisplayName: 猪猪存钱罐房间
+		Description: 需要一个猪猪存钱罐
+	}
+
+	Common: {
+		Override: 此房间已被重设。
+		Suitable: 此房间很适合。
+		Missing: 此房间缺少{0}。
+	}
+}
