@@ -106,4 +106,9 @@ public sealed class VanillaRoom : ModRoomType
 			t.ScoreRoom(ref score, ignoreType, npcType);
 		}
 	}
+
+	internal static bool AllowsNPC(int npcType)
+	{
+		return Instance.AllowNPC(npcType);
+	}
 }
