@@ -19,17 +19,12 @@ internal class SpawningDetours : ILoadable
 	{
 		var il = new ILCursor(ctx);
 
-		// Match parts of of '!(Main.npc[i].ModNPC?.TownNPCStayingHomeless)) ?? true)' short-circuit.
+		// Match a part of the '!(Main.npc[i].ModNPC?.TownNPCStayingHomeless)) ?? true)' short-circuit.
 		ILLabel? continueLabel = null;
 		il.GotoNext(
 			MoveType.After,
 			i => i.MatchCall(typeof(ModNPC), $"get_{nameof(ModNPC.TownNPCStayingHomeless)}"),
 			i => i.MatchNewobj(typeof(bool?))
-		);
-		il.GotoNext(
-			MoveType.After,
-			i => i.MatchCall(typeof(bool?), $"GetValueOrDefault"),
-			i => i.MatchBrtrue(out continueLabel)
 		);
 
 		// Match 'prioritizedTownNPCType = Main.npc[i].type;'.
@@ -42,8 +37,10 @@ internal class SpawningDetours : ILoadable
 			i => i.MatchLdfld(typeof(NPC), nameof(NPC.type)),
 			i => i.MatchStsfld(typeof(WorldGen), nameof(WorldGen.prioritizedTownNPCType))
 		);
+		// Go back and grab the label of the most recent branching operation. Varies between optimization modes.
+		il.FindPrev(out _, i => i.MatchBrtrue(out continueLabel) || i.MatchBr(out continueLabel));
 
-		// Just in case branching semantics differ between TML builds.
+		// This location is likely branched into.
 		ILUtils.HijackIncomingLabels(il);
 
 		il.EmitLdloc(iIndex);
