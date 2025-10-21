@@ -59,8 +59,10 @@ public class MiscDetours : ILoadable
 		{
 			ILCursor c = new(il);
 
+			// Move to into the body of the 'if (!RoomNeeds(prioritizedTownNPCType))' check.
 			c.GotoNext(MoveType.After, x => x.MatchCall("Terraria.WorldGen", "RoomNeeds"));
-			c.Index++;
+			// Varies between optimization modes.
+			c.GotoNext(MoveType.After, x => x.MatchBrfalse(out _) || x.MatchBrtrue(out _));
 
 			c.EmitLdcI4(0);
 			c.EmitRet();
